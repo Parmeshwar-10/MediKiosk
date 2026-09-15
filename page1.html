@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediKiosk - Voice Intake</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #102a43;
+            overflow: hidden;
+        }
+
+        /* Top Bar & Clock */
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .brand {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0056b3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #datetime-container {
+            text-align: right;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            backdrop-filter: blur(5px);
+        }
+        #time { font-size: 20px; font-weight: bold; color: #102a43; }
+        #date { font-size: 12px; color: #627d98; font-weight: 600; text-transform: uppercase; }
+
+        /* Progress Tracker */
+        .progress-container {
+            width: 100%;
+            max-width: 850px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            font-weight: 600;
+            color: #486581;
+            font-size: 14px;
+        }
+        .progress-bar {
+            flex-grow: 1;
+            height: 6px;
+            background: #bcccdc;
+            margin: 0 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill { width: 33%; height: 100%; background: #0056b3; }
+
+        /* Main Glassmorphism Card */
+        .kiosk-container {
+            background: #ffffff;
+            padding: 50px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(16, 42, 67, 0.08);
+            max-width: 850px;
+            width: 90%;
+            position: relative;
+        }
+
+        /* AI Prompt Bubble */
+        .ai-prompt {
+            background: #f0f4f8;
+            padding: 25px 30px;
+            border-radius: 20px 20px 20px 5px;
+            font-size: 26px;
+            color: #102a43;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            border: 1px solid #d9e2ec;
+        }
+        .ai-avatar {
+            background: #0056b3;
+            padding: 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ai-avatar svg { width: 28px; height: 28px; fill: #ffffff; }
+
+        /* Live Transcription Box (Glowing/Listening Effect) */
+        .transcription-wrapper {
+            position: relative;
+            margin-bottom: 40px;
+        }
+        .listening-indicator {
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: #e12d39;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: pulse-red 2s infinite;
+        }
+        .listening-indicator .dot {
+            width: 8px; height: 8px; background: white; border-radius: 50%;
+        }
+
+        .transcription-box {
+            background: #ffffff;
+            border: 2px solid #627d98;
+            padding: 40px 30px;
+            border-radius: 16px;
+            font-size: 24px;
+            color: #334e68;
+            min-height: 100px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+            transition: all 0.3s ease;
+        }
+        
+        /* Simulating the active glow when a user speaks */
+        .transcription-box.active {
+            border-color: #3399ff;
+            box-shadow: 0 0 20px rgba(51, 153, 255, 0.2), inset 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        /* Modern Action Buttons */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .btn {
+            flex: 1;
+            padding: 20px;
+            font-size: 20px;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .btn-retake {
+            background-color: #f0f4f8;
+            color: #486581;
+            border: 2px solid #d9e2ec;
+        }
+        .btn-retake:hover { background-color: #e2e8f0; color: #102a43; transform: scale(0.98); }
+        
+        .btn-confirm {
+            background-color: #0056b3;
+            color: white;
+            box-shadow: 0 10px 20px rgba(0, 86, 179, 0.2);
+        }
+        .btn-confirm:hover { background-color: #004494; transform: translateY(-3px); box-shadow: 0 15px 25px rgba(0, 86, 179, 0.3); }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(225, 45, 57, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(225, 45, 57, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(225, 45, 57, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation & Clock -->
+    <div class="top-bar">
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#0056b3"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+            MediKiosk
+        </div>
+        <div id="datetime-container">
+            <div id="time">00:00</div>
+            <div id="date">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="kiosk-container">
+        
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <span>Intake Started</span>
+            <div class="progress-bar"><div class="progress-fill"></div></div>
+            <span>Step 2: Medical History</span>
+        </div>
+        
+        <!-- AI Prompt -->
+        <div class="ai-prompt">
+            <div class="ai-avatar">
+                <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3zM19 10v2a7 7 0 01-14 0v-2H3v2a9 9 0 008 8.94V22h2v-3.06A9 9 0 0021 12v-2h-2z"/></svg>
+            </div>
+            <div>
+                <strong>"What brings you to the hospital today? Please describe your symptoms."</strong>
+            </div>
+        </div>
+
+        <!-- Live Transcription Area -->
+        <div class="transcription-wrapper">
+            <div class="listening-indicator">
+                <div class="dot"></div> LISTENING
+            </div>
+            <div class="transcription-box active">
+                "I have been experiencing severe chest pain since yesterday evening, and it hurts when I breathe deeply."
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <!-- Clears the text box just for prototype functionality -->
+            <button class="btn btn-retake" onclick="document.querySelector('.transcription-box').innerText = 'Listening...';">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Clear & Retake
+            </button>
+            
+            <!-- Added redirect to page2.html -->
+            <button class="btn btn-confirm" onclick="window.location.href='page2.html'">
+                Confirm & Next
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Clock Script -->
+    <script>
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; 
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('time').innerText = hours + ':' + minutes + ' ' + ampm;
+            const options = { weekday: 'short', month: 'short', day: 'numeric' };
+            document.getElementById('date').innerText = now.toLocaleDateString('en-IN', options);
+        }
+        setInterval(updateClock, 1000);
+        updateClock(); 
+    </script>
+</body>
+</html>
