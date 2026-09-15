@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediKiosk - Success</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #102a43;
+        }
+
+        /* Main Success Card */
+        .kiosk-container {
+            text-align: center;
+            background: #ffffff;
+            padding: 60px 80px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(16, 42, 67, 0.08);
+            border-top: 10px solid #27ae60; /* Success Green */
+            max-width: 700px;
+            width: 90%;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Animated Checkmark */
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: #eafaf1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px auto;
+            color: #27ae60;
+        }
+        .success-icon svg {
+            width: 50px;
+            height: 50px;
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: drawCheck 1s ease-out forwards;
+            animation-delay: 0.2s;
+        }
+
+        @keyframes drawCheck {
+            to { stroke-dashoffset: 0; }
+        }
+
+        h1 {
+            font-size: 36px;
+            margin: 0 0 15px 0;
+            color: #102a43;
+        }
+        
+        p.subtitle {
+            font-size: 18px;
+            margin-bottom: 30px;
+            color: #627d98;
+            line-height: 1.5;
+        }
+
+        /* Token Display */
+        .token-box {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            display: inline-block;
+            min-width: 250px;
+        }
+        .token-label {
+            font-size: 14px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .token-number {
+            font-size: 48px;
+            font-weight: 900;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        /* Finish Button */
+        .start-btn {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 86, 179, 0.2);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .start-btn:hover {
+            background-color: #004494;
+            transform: translateY(-2px);
+        }
+
+        .privacy-note {
+            margin-top: 30px;
+            font-size: 13px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="kiosk-container">
+        
+        <div class="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+
+        <h1>Intake Complete</h1>
+        <p class="subtitle">Your medical history and scanned documents have been securely transmitted to Dr. Verma's dashboard.</p>
+
+        <div class="token-box">
+            <div class="token-label">Your OPD Queue Token</div>
+            <div class="token-number">104</div>
+        </div>
+
+        <div>
+            <button class="start-btn" onclick="window.location.href='login.html'">
+                Return to Home Menu
+            </button>
+        </div>
+
+        <div class="privacy-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+            Your session has been automatically logged out for privacy.
+        </div>
+    </div>
+
+</body>
+</html>
