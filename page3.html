@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediKiosk - Document Scanner</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #f8fafc;
+            overflow: hidden;
+        }
+
+        /* Top Bar & Clock */
+        .top-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 20px 40px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .brand {
+            font-size: 24px; font-weight: 800; color: #38bdf8;
+            display: flex; align-items: center; gap: 10px;
+        }
+        #datetime-container {
+            text-align: right; background: rgba(255, 255, 255, 0.05);
+            padding: 10px 20px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #time { font-size: 20px; font-weight: bold; color: #ffffff; }
+        #date { font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+
+        /* Progress Tracker */
+        .progress-container {
+            width: 100%; max-width: 900px; display: flex; align-items: center;
+            justify-content: space-between; margin-bottom: 20px; font-weight: 600;
+            color: #94a3b8; font-size: 14px;
+        }
+        .progress-bar {
+            flex-grow: 1; height: 6px; background: #334155;
+            margin: 0 20px; border-radius: 10px; overflow: hidden;
+        }
+        .progress-fill { width: 85%; height: 100%; background: #38bdf8; border-radius: 10px;} 
+
+        /* Main Kiosk Layout */
+        .kiosk-container {
+            width: 90%; max-width: 900px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .instructions {
+            text-align: center; margin-bottom: 25px;
+        }
+        .instructions h2 { margin: 0 0 10px 0; font-size: 28px; color: #f8fafc; }
+        .instructions p { margin: 0; font-size: 18px; color: #94a3b8; }
+
+        /* The Camera/Scanner Viewfinder */
+        .scanner-window {
+            width: 100%; height: 450px;
+            background: #1e293b;
+            border-radius: 16px; position: relative; overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 4px solid #334155;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Faux Document Paper */
+        .faux-doc-paper {
+            width: 80%; height: 90%;
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            position: relative;
+            padding: 30px;
+            box-sizing: border-box;
+            transform: rotate(-1deg);
+        }
+
+        /* Faux Document Text */
+        .faux-doc-text {
+            color: #334155;
+            font-family: 'Courier New', Courier, monospace; font-size: 15px; line-height: 1.6;
+            pointer-events: none;
+        }
+        .faux-doc-text h3 { margin-top: 0; border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; color: #0f172a;}
+
+        /* Viewfinder Corners */
+        .corner {
+            position: absolute; width: 50px; height: 50px;
+            border-color: #38bdf8; border-style: solid; border-width: 0;
+            z-index: 10;
+        }
+        .top-left { top: 20px; left: 20px; border-top-width: 4px; border-left-width: 4px; border-top-left-radius: 8px;}
+        .top-right { top: 20px; right: 20px; border-top-width: 4px; border-right-width: 4px; border-top-right-radius: 8px;}
+        .bottom-left { bottom: 20px; left: 20px; border-bottom-width: 4px; border-left-width: 4px; border-bottom-left-radius: 8px;}
+        .bottom-right { bottom: 20px; right: 20px; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 8px;}
+
+        /* Animated Scanning Laser */
+        .laser {
+            position: absolute; width: 100%; height: 3px; background: #38bdf8;
+            box-shadow: 0 0 15px 3px rgba(56, 189, 248, 0.5); top: 0; left: 0; z-index: 5;
+            animation: scan-laser 2.5s ease-in-out infinite alternate;
+        }
+        @keyframes scan-laser {
+            0% { top: 5%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 95%; opacity: 0; }
+        }
+
+        /* Camera Flash Element */
+        .camera-flash {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: white; z-index: 20; opacity: 0; pointer-events: none;
+            transition: opacity 0.4s ease-out;
+        }
+
+        /* AI Bounding Boxes */
+        .bounding-box {
+            position: absolute; border: 2px solid #22c55e; background: rgba(34, 197, 94, 0.15);
+            border-radius: 4px; z-index: 4; display: flex; align-items: flex-start; padding: 2px 6px;
+            color: #064e3b; font-size: 11px; font-weight: bold; text-transform: uppercase;
+            animation: pulse-box 2s infinite alternate; box-sizing: border-box;
+        }
+        .box-1 { top: 15%; left: 10%; width: 50%; height: 12%; }
+        .box-2 { top: 40%; left: 10%; width: 70%; height: 8%; }
+        .box-3 { top: 52%; left: 10%; width: 65%; height: 8%; }
+
+        @keyframes pulse-box {
+            0% { border-color: rgba(34, 197, 94, 0.4); box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+            100% { border-color: rgba(34, 197, 94, 1); box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
+        }
+
+        /* Controls */
+        .controls {
+            display: flex; justify-content: center; gap: 20px; width: 100%; margin-top: 30px;
+        }
+        .btn {
+            padding: 18px 30px; font-size: 18px; font-weight: 700;
+            border-radius: 12px; cursor: pointer; border: none;
+            transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 10px;
+            min-width: 250px;
+        }
+        .btn-skip { background-color: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-skip:hover { background-color: rgba(255,255,255,0.1); color: #f8fafc; }
+        
+        .btn-capture { background-color: #38bdf8; color: #0f172a; box-shadow: 0 8px 20px rgba(56, 189, 248, 0.2); }
+        .btn-capture:hover { background-color: #0ea5e9; transform: translateY(-2px); box-shadow: 0 12px 25px rgba(56, 189, 248, 0.4); }
+        .btn-capture.processing { background-color: #22c55e; box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3); pointer-events: none;}
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#38bdf8"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+            MediKiosk
+        </div>
+        <div id="datetime-container"><div id="time">00:00</div><div id="date">Loading...</div></div>
+    </div>
+
+    <div class="kiosk-container">
+        <div class="progress-container">
+            <span>Step 3: AYUSH Profile</span>
+            <div class="progress-bar"><div class="progress-fill"></div></div>
+            <span style="color: #f8fafc;">Step 4: Scan Records</span>
+        </div>
+        
+        <div class="instructions">
+            <h2>Place Your Documents Below</h2>
+            <p>Slide prescriptions or lab reports under the scanner. The AI will read them automatically.</p>
+        </div>
+
+        <div class="scanner-window">
+            
+            <!-- Camera Flash Element -->
+            <div class="camera-flash" id="flash"></div>
+
+            <!-- Authentic looking paper document -->
+            <div class="faux-doc-paper">
+                <div class="faux-doc-text">
+                    <h3>PATIENT LAB REPORT</h3>
+                    <p><strong>Date:</strong> 22-Aug-2026<br><strong>Ref Dr:</strong> OPD General<br><br>
+                    <strong>Complete Blood Count (CBC)</strong><br>
+                    Hemoglobin: 14.2 g/dL <em>(Normal)</em><br><br>
+                    WBC Count: 6,500 cells/cmm <em>(Normal)</em><br><br>
+                    Platelets: 250,000 /mcL <em>(Normal)</em>
+                    </p>
+                </div>
+
+                <!-- Bounding boxes positioned inside the paper -->
+                <div class="bounding-box box-1">Diagnosis Detected</div>
+                <div class="bounding-box box-2">Extracting: Hemoglobin Levels</div>
+                <div class="bounding-box box-3">Extracting: WBC Count</div>
+            </div>
+
+            <!-- Viewfinder UI -->
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+            
+            <div class="laser"></div>
+        </div>
+
+        <div class="controls">
+            <!-- Skips directly to the final success page -->
+            <button class="btn btn-skip" onclick="window.location.href='success.html'">No Documents to Scan</button>
+            
+            <!-- Triggers the scanning animation -->
+            <button class="btn btn-capture" id="captureBtn" onclick="processScan()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span id="btnText">Scan & Extract Data</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Clock functionality
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours(); let minutes = now.getMinutes(); let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12; hours = hours ? hours : 12; minutes = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('time').innerText = hours + ':' + minutes + ' ' + ampm;
+            document.getElementById('date').innerText = now.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+        setInterval(updateClock, 1000); updateClock(); 
+
+        // Simulated Scanning Process
+        function processScan() {
+            const flash = document.getElementById('flash');
+            const btn = document.getElementById('captureBtn');
+            const btnText = document.getElementById('btnText');
+
+            // 1. Trigger camera flash
+            flash.style.opacity = '1';
+            setTimeout(() => { flash.style.opacity = '0'; }, 150);
+
+            // 2. Change button state to simulate processing
+            btn.classList.add('processing');
+            btnText.innerText = "Processing OCR...";
+            
+            // Remove the icon during processing for a cleaner look
+            const svgIcon = btn.querySelector('svg');
+            if(svgIcon) svgIcon.style.display = 'none';
+
+            // 3. Redirect to the success/completion page after a short delay
+            setTimeout(() => {
+                window.location.href = 'success.html';
+            }, 1800); // 1.8 seconds processing simulation
+        }
+    </script>
+</body>
+</html>
