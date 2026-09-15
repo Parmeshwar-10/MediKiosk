@@ -46,19 +46,16 @@
         
         .input-label { display: block; font-weight: bold; color: #334e68; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; }
         
-        /* New Dropdown Styling for Multi-Tenancy */
-        .dropdown-box {
-            width: 100%; height: 50px; background: #ffffff; border: 2px solid #1e293b;
-            border-radius: 12px; font-size: 16px; font-weight: bold; color: #102a43;
-            padding: 0 15px; box-sizing: border-box; cursor: pointer; margin-bottom: 15px;
-            outline: none; transition: all 0.2s;
-        }
-        .dropdown-box:focus { border-color: #38bdf8; }
-
+        /* Interactive Input Boxes */
         .display-box {
-            width: 100%; height: 60px; background: #f0f4f8; border: 2px solid #0056b3;
+            width: 100%; height: 60px; background: #f8fafc; border: 2px solid #cbd5e1;
             border-radius: 12px; font-size: 28px; font-weight: bold; color: #102a43;
-            display: flex; align-items: center; padding: 0 20px; box-sizing: border-box; letter-spacing: 2px;
+            display: flex; align-items: center; padding: 0 20px; box-sizing: border-box; 
+            letter-spacing: 2px; cursor: pointer; opacity: 0.6; transition: all 0.2s;
+        }
+        .display-box.active-box {
+            border-color: #0056b3; background: #ffffff; opacity: 1;
+            box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.1);
         }
 
         /* Right Side: Numpad */
@@ -79,9 +76,9 @@
         }
         .btn-primary:hover { background: #004494; }
         
-        /* Staff Mode Styles */
+        /* Staff Mode Overrides */
         .staff-mode .input-section { background: #f8fafc; }
-        .staff-mode .display-box { border-color: #1e293b; background: #ffffff; }
+        .staff-mode .display-box.active-box { border-color: #1e293b; box-shadow: 0 0 0 4px rgba(30, 41, 59, 0.1); }
         .staff-mode .btn-primary { background: #1e293b; }
         .staff-mode h2 { color: #1e293b; }
     </style>
@@ -99,8 +96,7 @@
     <div class="login-container" id="main-container">
         <div class="input-section">
             
-            <!-- Patient / Staff Toggle -->
-            <div class="role-toggle">
+            <div class="role-toggle" id="role-toggle-container">
                 <div class="toggle-btn active-patient" id="btn-patient" onclick="switchRole('patient')">Patient Intake</div>
                 <div class="toggle-btn" id="btn-staff" onclick="switchRole('staff')">Staff Portal</div>
             </div>
@@ -108,20 +104,25 @@
             <h2 id="step-title">Patient Login</h2>
             <p class="subtitle" id="step-subtitle">Securely access your medical records via ABDM.</p>
 
-            <!-- Multi-Tenancy Facility Dropdown (Hidden by default for patients) -->
-            <div id="facility-selection" style="display: none;">
-                <span class="input-label">Select Facility / Location</span>
-                <select id="facility-dropdown" class="dropdown-box">
-                    <option value="">-- Choose Assigned Hospital --</option>
-                    <option value="UP-LKO-001">City Hospital, Lucknow (ID: UP-LKO-001)</option>
-                    <option value="UP-SIT-002">Rural Health Kiosk, Sitapur (ID: UP-SIT-002)</option>
-                    <option value="UP-KNP-003">General Hospital, Kanpur (ID: UP-KNP-003)</option>
-                </select>
+            <!-- 1. Patient Input Group -->
+            <div id="patient-input-group">
+                <span class="input-label">Enter ABHA ID or Mobile Number</span>
+                <div class="display-box active-box" id="display-patient" onclick="setActiveBox('patient')"></div>
             </div>
 
-            <div>
-                <span class="input-label" id="input-label">Enter ABHA ID or Mobile Number</span>
-                <div class="display-box" id="display-box"></div>
+            <!-- 2. Staff Input Group (Hospital Code + Doctor ID) -->
+            <div id="staff-input-group" style="display: none;">
+                <span class="input-label">Enter 4-Digit Hospital Code</span>
+                <div class="display-box active-box" id="display-hospital" onclick="setActiveBox('hospital')" style="margin-bottom: 20px;"></div>
+                
+                <span class="input-label">Enter 6-Digit Staff ID</span>
+                <div class="display-box" id="display-staff" onclick="setActiveBox('staff')"></div>
+            </div>
+
+            <!-- 3. OTP Input Group -->
+            <div id="otp-input-group" style="display: none;">
+                <span class="input-label">Enter 4-Digit OTP</span>
+                <div class="display-box active-box" id="display-otp"></div>
             </div>
 
             <button class="btn-primary" id="action-btn" onclick="handleLogin()">
@@ -157,27 +158,43 @@
         }
         setInterval(updateClock, 1000); updateClock();
 
-        let currentInput = "";
+        // Centralized data storage for all input boxes
+        let inputData = {
+            patient: "",
+            hospital: "",
+            staff: "",
+            otp: ""
+        };
+        
         let currentRole = "patient"; 
         let isOtpStep = false; 
+        let activeBox = "patient";
+
+        // Function to highlight the box currently being typed into
+        function setActiveBox(boxName) {
+            if (isOtpStep) return; // Lock box switching during OTP
+            activeBox = boxName;
+            document.querySelectorAll('.display-box').forEach(el => el.classList.remove('active-box'));
+            document.getElementById('display-' + boxName).classList.add('active-box');
+        }
 
         function switchRole(role) {
             currentRole = role;
-            currentInput = "";
             isOtpStep = false; 
-            document.getElementById('display-box').innerText = "";
+            document.getElementById('role-toggle-container').style.display = "flex";
+            document.getElementById('otp-input-group').style.display = "none";
 
             if (role === 'staff') {
                 document.getElementById('btn-patient').className = "toggle-btn";
                 document.getElementById('btn-staff').className = "toggle-btn active-staff";
                 document.getElementById('main-container').classList.add('staff-mode');
                 
-                // Show Facility Selection for Staff
-                document.getElementById('facility-selection').style.display = "block";
+                document.getElementById('patient-input-group').style.display = "none";
+                document.getElementById('staff-input-group').style.display = "block";
+                setActiveBox('hospital'); // Default active box for staff
                 
                 document.getElementById('step-title').innerText = "Physician Login";
-                document.getElementById('step-subtitle').innerText = "Enter your hospital credentials to access the EMR.";
-                document.getElementById('input-label').innerText = "Enter 6-Digit Staff ID";
+                document.getElementById('step-subtitle').innerText = "Enter your facility code and hospital ID.";
                 document.getElementById('action-btn').innerText = "Send OTP via SMS"; 
                 document.getElementById('brand-icon').setAttribute('fill', '#1e293b');
             } else {
@@ -185,71 +202,84 @@
                 document.getElementById('btn-staff').className = "toggle-btn";
                 document.getElementById('main-container').classList.remove('staff-mode');
                 
-                // Hide Facility Selection for Patients
-                document.getElementById('facility-selection').style.display = "none";
+                document.getElementById('staff-input-group').style.display = "none";
+                document.getElementById('patient-input-group').style.display = "block";
+                setActiveBox('patient');
                 
                 document.getElementById('step-title').innerText = "Patient Login";
                 document.getElementById('step-subtitle').innerText = "Securely access your medical records via ABDM.";
-                document.getElementById('input-label').innerText = "Enter ABHA ID or Mobile Number";
                 document.getElementById('action-btn').innerText = "Send OTP via SMS";
                 document.getElementById('brand-icon').setAttribute('fill', '#0056b3');
             }
         }
 
         function appendDigit(digit) {
-            if (!isOtpStep) {
-                if (currentRole === 'staff' && currentInput.length >= 6) return;
-                if (currentRole === 'patient' && currentInput.length >= 14) return;
-            } else {
-                if (currentInput.length >= 4) return; 
+            if (isOtpStep) {
+                if (inputData.otp.length >= 4) return;
+                inputData.otp += digit;
+                document.getElementById('display-otp').innerText = inputData.otp;
+                return;
             }
             
-            currentInput += digit;
-            document.getElementById('display-box').innerText = currentInput;
+            // Character limits based on active box
+            if (activeBox === 'hospital' && inputData.hospital.length >= 4) return;
+            if (activeBox === 'staff' && inputData.staff.length >= 6) return;
+            if (activeBox === 'patient' && inputData.patient.length >= 14) return;
+            
+            inputData[activeBox] += digit;
+            document.getElementById('display-' + activeBox).innerText = inputData[activeBox];
+            
+            // Auto-switch from Hospital Code to Staff ID once 4 digits are typed
+            if (activeBox === 'hospital' && inputData.hospital.length === 4) {
+                setActiveBox('staff');
+            }
         }
 
-        function deleteDigit() { currentInput = currentInput.slice(0, -1); document.getElementById('display-box').innerText = currentInput; }
-        function clearInput() { currentInput = ""; document.getElementById('display-box').innerText = currentInput; }
+        function deleteDigit() { 
+            let target = isOtpStep ? 'otp' : activeBox;
+            inputData[target] = inputData[target].slice(0, -1); 
+            document.getElementById('display-' + target).innerText = inputData[target]; 
+        }
+        
+        function clearInput() { 
+            let target = isOtpStep ? 'otp' : activeBox;
+            inputData[target] = ""; 
+            document.getElementById('display-' + target).innerText = inputData[target]; 
+        }
         
         function handleLogin() {
             if (!isOtpStep) {
                 
-                // New Validation Check: Enforce Facility Selection for Doctors
                 if (currentRole === 'staff') {
-                    let selectedFacility = document.getElementById('facility-dropdown').value;
-                    if (selectedFacility === "") {
-                        alert("Please select your assigned Hospital Facility to continue.");
+                    if (inputData.hospital.length < 4 || inputData.staff.length < 4) {
+                        alert("Please enter a valid Hospital Code and Staff ID.");
+                        return;
+                    }
+                } else {
+                    if (inputData.patient.length < 4) {
+                        alert("Please enter a valid ABHA ID or Mobile Number.");
                         return;
                     }
                 }
-
-                // Step 1: ID/Number Entry
-                if (currentInput.length < 4) {
-                    alert("Please enter a valid ID or Number to continue.");
-                    return;
-                }
                 
-                // Switch to OTP Screen
+                // Transition to OTP State
                 isOtpStep = true;
-                currentInput = "";
-                document.getElementById('display-box').innerText = "";
+                document.getElementById('patient-input-group').style.display = "none";
+                document.getElementById('staff-input-group').style.display = "none";
+                document.getElementById('role-toggle-container').style.display = "none"; // Hide toggle
                 
-                // Hide facility dropdown during OTP phase
-                document.getElementById('facility-selection').style.display = "none";
+                document.getElementById('otp-input-group').style.display = "block";
                 
                 document.getElementById('step-title').innerText = "Verification";
                 document.getElementById('step-subtitle').innerText = "Enter the 4-digit OTP sent to your registered device.";
-                document.getElementById('input-label').innerText = "Enter OTP";
                 document.getElementById('action-btn').innerText = "Verify & Access Dashboard";
                 
             } else {
-                // Step 2: OTP Entry & Redirection
-                if (currentInput.length < 4) {
+                if (inputData.otp.length < 4) {
                     alert("Please enter the complete 4-digit OTP.");
                     return;
                 }
                 
-                // Route the user based on their selected role
                 if (currentRole === 'staff') {
                     window.location.href = "dr.html";
                 } else {
