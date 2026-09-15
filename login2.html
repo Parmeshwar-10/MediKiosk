@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediKiosk - Unified Login</title>
+    <style>
+        body {
+            margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            height: 100vh; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; color: #102a43;
+        }
+
+        /* Top Navigation & Clock */
+        .top-bar {
+            position: absolute; top: 0; left: 0; right: 0; padding: 20px 40px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .brand { font-size: 24px; font-weight: 800; color: #0056b3; display: flex; align-items: center; gap: 10px; }
+        #datetime-container { text-align: right; background: rgba(255, 255, 255, 0.9); padding: 10px 20px; border-radius: 12px; }
+        #time { font-size: 20px; font-weight: bold; color: #102a43; }
+        #date { font-size: 12px; color: #627d98; font-weight: 600; text-transform: uppercase; }
+
+        /* Main Container */
+        .login-container {
+            background: #ffffff; border-radius: 24px; box-shadow: 0 20px 40px rgba(16, 42, 67, 0.08);
+            max-width: 850px; width: 90%; display: flex; overflow: hidden; transition: all 0.3s ease;
+        }
+
+        /* Toggle Switch Container */
+        .role-toggle {
+            display: flex; background: #e2e8f0; border-radius: 12px; padding: 4px; margin-bottom: 30px;
+        }
+        .toggle-btn {
+            flex: 1; padding: 12px 20px; text-align: center; font-weight: bold; font-size: 16px;
+            border-radius: 8px; cursor: pointer; transition: all 0.3s ease; color: #64748b;
+        }
+        .toggle-btn.active-patient { background: #ffffff; color: #0056b3; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .toggle-btn.active-staff { background: #1e293b; color: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        /* Left Side: Input Area */
+        .input-section { flex: 1; padding: 40px; background: #ffffff; display: flex; flex-direction: column; justify-content: center; }
+        h2 { margin: 0 0 5px 0; font-size: 30px; color: #102a43; transition: color 0.3s; }
+        p.subtitle { color: #627d98; margin-bottom: 25px; font-size: 15px; }
+        
+        .input-label { display: block; font-weight: bold; color: #334e68; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; }
+        .display-box {
+            width: 100%; height: 60px; background: #f0f4f8; border: 2px solid #0056b3;
+            border-radius: 12px; font-size: 28px; font-weight: bold; color: #102a43;
+            display: flex; align-items: center; padding: 0 20px; box-sizing: border-box; letter-spacing: 2px;
+        }
+
+        /* Right Side: Numpad */
+        .numpad-section { flex: 1; background: #f8fafc; padding: 40px; border-left: 2px solid #e2e8f0; display: flex; flex-direction: column; justify-content: center; }
+        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .num-btn {
+            background: #ffffff; border: 1px solid #d9e2ec; border-radius: 12px; padding: 18px 0;
+            font-size: 26px; font-weight: bold; color: #102a43; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+        .num-btn:hover { background: #e2e8f0; }
+        .num-btn.action { background: #e12d39; color: white; border: none; font-size: 20px; }
+
+        /* Secure Action Button */
+        .btn-primary {
+            width: 100%; padding: 18px; font-size: 18px; font-weight: bold; margin-top: 25px;
+            background: #0056b3; color: white; border: none; border-radius: 12px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; gap: 10px; transition: all 0.2s;
+        }
+        .btn-primary:hover { background: #004494; }
+        
+        /* Staff Mode Styles */
+        .staff-mode .input-section { background: #f8fafc; }
+        .staff-mode .display-box { border-color: #1e293b; background: #ffffff; }
+        .staff-mode .btn-primary { background: #1e293b; }
+        .staff-mode h2 { color: #1e293b; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#0056b3" id="brand-icon"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+            MediKiosk
+        </div>
+        <div id="datetime-container"><div id="time">00:00</div><div id="date">Loading...</div></div>
+    </div>
+
+    <div class="login-container" id="main-container">
+        <div class="input-section">
+            
+            <!-- Patient / Staff Toggle -->
+            <div class="role-toggle">
+                <div class="toggle-btn active-patient" id="btn-patient" onclick="switchRole('patient')">Patient Intake</div>
+                <div class="toggle-btn" id="btn-staff" onclick="switchRole('staff')">Staff Portal</div>
+            </div>
+
+            <h2 id="step-title">Patient Login</h2>
+            <p class="subtitle" id="step-subtitle">Securely access your medical records via ABDM.</p>
+
+            <div>
+                <span class="input-label" id="input-label">Enter ABHA ID or Mobile Number</span>
+                <div class="display-box" id="display-box"></div>
+            </div>
+
+            <button class="btn-primary" id="action-btn" onclick="handleLogin()">
+                Send OTP via SMS
+            </button>
+        </div>
+
+        <div class="numpad-section">
+            <div class="numpad-grid">
+                <button class="num-btn" onclick="appendDigit('1')">1</button>
+                <button class="num-btn" onclick="appendDigit('2')">2</button>
+                <button class="num-btn" onclick="appendDigit('3')">3</button>
+                <button class="num-btn" onclick="appendDigit('4')">4</button>
+                <button class="num-btn" onclick="appendDigit('5')">5</button>
+                <button class="num-btn" onclick="appendDigit('6')">6</button>
+                <button class="num-btn" onclick="appendDigit('7')">7</button>
+                <button class="num-btn" onclick="appendDigit('8')">8</button>
+                <button class="num-btn" onclick="appendDigit('9')">9</button>
+                <button class="num-btn action" onclick="clearInput()">Clear</button>
+                <button class="num-btn" onclick="appendDigit('0')">0</button>
+                <button class="num-btn action" onclick="deleteDigit()" style="background:#486581;">⌫</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours(); let minutes = now.getMinutes(); let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12; hours = hours ? hours : 12; minutes = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('time').innerText = hours + ':' + minutes + ' ' + ampm;
+            document.getElementById('date').innerText = now.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        let currentInput = "";
+        let currentRole = "patient"; 
+        let isOtpStep = false; // Tracks whether we are on the initial ID screen or the OTP screen
+
+        function switchRole(role) {
+            currentRole = role;
+            currentInput = "";
+            isOtpStep = false; // Reset to step 1 whenever switching roles
+            document.getElementById('display-box').innerText = "";
+
+            if (role === 'staff') {
+                document.getElementById('btn-patient').className = "toggle-btn";
+                document.getElementById('btn-staff').className = "toggle-btn active-staff";
+                document.getElementById('main-container').classList.add('staff-mode');
+                
+                document.getElementById('step-title').innerText = "Physician Login";
+                document.getElementById('step-subtitle').innerText = "Enter your hospital credentials to access the EMR.";
+                document.getElementById('input-label').innerText = "Enter 6-Digit Staff ID";
+                // Even staff gets the OTP flow now
+                document.getElementById('action-btn').innerText = "Send OTP via SMS"; 
+                document.getElementById('brand-icon').setAttribute('fill', '#1e293b');
+            } else {
+                document.getElementById('btn-patient').className = "toggle-btn active-patient";
+                document.getElementById('btn-staff').className = "toggle-btn";
+                document.getElementById('main-container').classList.remove('staff-mode');
+                
+                document.getElementById('step-title').innerText = "Patient Login";
+                document.getElementById('step-subtitle').innerText = "Securely access your medical records via ABDM.";
+                document.getElementById('input-label').innerText = "Enter ABHA ID or Mobile Number";
+                document.getElementById('action-btn').innerText = "Send OTP via SMS";
+                document.getElementById('brand-icon').setAttribute('fill', '#0056b3');
+            }
+        }
+
+        function appendDigit(digit) {
+            // Logic changes depending on whether we are typing an ID or typing an OTP
+            if (!isOtpStep) {
+                if (currentRole === 'staff' && currentInput.length >= 6) return;
+                if (currentRole === 'patient' && currentInput.length >= 14) return;
+            } else {
+                if (currentInput.length >= 4) return; // Limit OTP to 4 digits for everyone
+            }
+            
+            currentInput += digit;
+            document.getElementById('display-box').innerText = currentInput;
+        }
+
+        function deleteDigit() { currentInput = currentInput.slice(0, -1); document.getElementById('display-box').innerText = currentInput; }
+        function clearInput() { currentInput = ""; document.getElementById('display-box').innerText = currentInput; }
+        
+        function handleLogin() {
+            if (!isOtpStep) {
+                // Step 1: Submitting the initial ID/Number
+                if (currentInput.length < 4) {
+                    alert("Please enter a valid ID or Number to continue.");
+                    return;
+                }
+                
+                // Switch to OTP Mode
+                isOtpStep = true;
+                currentInput = "";
+                document.getElementById('display-box').innerText = "";
+                
+                document.getElementById('step-title').innerText = "Verification";
+                document.getElementById('step-subtitle').innerText = "Enter the 4-digit OTP sent to your registered device.";
+                document.getElementById('input-label').innerText = "Enter OTP";
+                document.getElementById('action-btn').innerText = "Verify & Access Dashboard";
+                
+            } else {
+                // Step 2: Submitting the OTP
+                if (currentInput.length < 4) {
+                    alert("Please enter the complete 4-digit OTP.");
+                    return;
+                }
+                
+                // Redirect to the dashboard
+                window.location.href = "dashboard.html";
+            }
+        }
+    </script>
+</body>
+</html>
