@@ -30,15 +30,13 @@
         .queue-item:hover { background: #1e293b; }
         .queue-item.active { background: #1e293b; border-left: 4px solid #38bdf8; }
         .queue-item.critical { border-left: 4px solid #ef4444; }
-        .queue-item.active.critical { background: #451a1a; } /* Dark red for active critical */
+        .queue-item.active.critical { background: #451a1a; }
         .patient-name { font-weight: bold; color: white; font-size: 16px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;}
         .patient-meta { font-size: 12px; color: #94a3b8; }
         .alert-badge { background: #ef4444; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; letter-spacing: 0.5px;}
 
         /* Main Workspace */
-        .main-workspace {
-            flex: 1; display: flex; flex-direction: column; overflow-y: auto;
-        }
+        .main-workspace { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
         
         /* Top Navbar */
         .top-nav {
@@ -51,14 +49,14 @@
         .datetime { font-size: 14px; color: #64748b; font-weight: 600; }
 
         /* Dashboard Content */
-        .dashboard-content { padding: 30px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box;}
+        .dashboard-content { padding: 30px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; transition: opacity 0.3s ease; }
         
         /* Patient Header Card */
         .patient-header {
             background: white; padding: 25px 30px; border-radius: 16px;
             box-shadow: 0 10px 25px rgba(16,42,67,0.04); margin-bottom: 25px;
             display: flex; flex-direction: column; gap: 20px;
-            border-top: 5px solid #ef4444; 
+            border-top: 5px solid #38bdf8; /* Default blue, overridden to red for critical via JS */
         }
         .ph-top { display: flex; justify-content: space-between; align-items: flex-start; }
         .ph-info h1 { margin: 0 0 8px 0; font-size: 32px; color: #0f172a; }
@@ -73,7 +71,7 @@
         .v-value { font-size: 20px; font-weight: bold; color: #0f172a;}
         .v-unit { font-size: 14px; color: #94a3b8; font-weight: normal;}
 
-        /* Grid Layout for Modules */
+        /* Grid Layout */
         .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
 
         /* Summary Cards */
@@ -92,26 +90,28 @@
         
         .card-body { padding: 24px; font-size: 15px; line-height: 1.6; }
         
-        /* Data Formatting */
         .data-row { margin-bottom: 20px; }
         .data-row:last-child { margin-bottom: 0; }
         .data-label { font-weight: bold; color: #64748b; font-size: 12px; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;}
         .data-value { color: #0f172a; font-size: 15px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #f1f5f9;}
-        
         .highlight-red { color: #ef4444; font-weight: bold; background: #fef2f2; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5; }
 
-        /* Timeline for OCR */
-        .timeline-item { border-left: 2px solid #bae6fd; padding-left: 20px; margin-bottom: 20px; position: relative; }
-        .timeline-item:last-child { margin-bottom: 0; }
-        .timeline-item::before { content: ''; position: absolute; left: -7px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: #0ea5e9; border: 2px solid white; box-shadow: 0 0 0 2px #bae6fd;}
-        .timeline-date { font-size: 13px; color: #0284c7; font-weight: bold; margin-bottom: 4px;}
-        .timeline-content { font-size: 14px; color: #334155; background: #f8fafc; padding: 12px; border-radius: 8px;}
+        /* OCR Verification Buttons */
+        .btn-verify {
+            background: #ffffff; border: 1px solid #0369a1; color: #0369a1;
+            padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+            margin-top: 8px; transition: 0.2s;
+        }
+        .btn-verify:hover { background: #e0f2fe; }
 
         /* Action Buttons */
         .action-bar { margin-top: 30px; display: flex; justify-content: flex-end; gap: 15px; }
-        .btn { padding: 14px 28px; border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; border: none; transition: 0.2s; }
+        .btn { padding: 14px 24px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 8px;}
         .btn-outline { background: white; border: 2px solid #cbd5e1; color: #475569; }
         .btn-outline:hover { background: #f1f5f9; border-color: #94a3b8; }
+        .btn-secondary { background: #e2e8f0; color: #0f172a; }
+        .btn-secondary:hover { background: #cbd5e1; }
         .btn-primary { background: #0056b3; color: white; box-shadow: 0 4px 12px rgba(0,86,179,0.3); }
         .btn-primary:hover { background: #004494; transform: translateY(-1px); }
     </style>
@@ -126,17 +126,18 @@
         </div>
         <div class="queue-title">Waiting Queue (OPD)</div>
         
-        <div class="queue-item active critical" onclick="selectPatient(this)">
+        <!-- Added patient ID parameters to the onclick function -->
+        <div class="queue-item active critical" onclick="selectPatient(this, 'parmeshwar')">
             <div class="patient-name">PARMESHWAR <span class="alert-badge">RED FLAG</span></div>
             <div class="patient-meta">Wait: 5 mins • Token: 104</div>
         </div>
         
-        <div class="queue-item" onclick="selectPatient(this)">
+        <div class="queue-item" onclick="selectPatient(this, 'vishesh')">
             <div class="patient-name">Vishesh</div>
             <div class="patient-meta">Wait: 12 mins • Token: 105</div>
         </div>
         
-        <div class="queue-item" onclick="selectPatient(this)">
+        <div class="queue-item" onclick="selectPatient(this, 'khushi')">
             <div class="patient-name">Khushi</div>
             <div class="patient-meta">Wait: 18 mins • Token: 106</div>
         </div>
@@ -147,138 +148,250 @@
         
         <!-- Navbar -->
         <header class="top-nav">
-            <div class="doctor-profile">
-                Dr. Verma (General Medicine)
+            <div class="doctor-profile" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+                <div>Dr. Verma (General Medicine)</div>
+                <div style="font-size: 11px; color: #64748b; font-weight: normal;">📍 Lucknow City Hospital (ID: 1001)</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
                 <span class="security-badge">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
                     E2E Encrypted
                 </span>
+                <div class="datetime" id="datetime">Loading...</div>
             </div>
-            <div class="datetime" id="datetime">Loading...</div>
         </header>
 
-        <section class="dashboard-content">
+        <section class="dashboard-content" id="dashboard-content">
             
             <!-- Patient Header -->
-            <div class="patient-header">
+            <div class="patient-header" id="ph-card">
                 <div class="ph-top">
                     <div class="ph-info">
-                        <h1>PARMESHWAR</h1>
+                        <h1 id="p-name">PARMESHWAR</h1>
                         <div class="ph-meta">
-                            <span>19 Yrs • Male</span>
-                            <span>ABHA ID: 91-XXXX-XXXX-3421</span>
+                            <span id="p-demo">19 Yrs • Male</span>
+                            <span id="p-abha">ABHA ID: 91-XXXX-XXXX-3421</span>
                             <span>Source: Kiosk AI Intake</span>
                         </div>
                     </div>
-                    <div>
-                        <span class="highlight-red" style="font-size: 16px; padding: 10px 20px; box-shadow: 0 4px 10px rgba(239,68,68,0.2);">CRITICAL: Suspected Angina / Cardiac Event</span>
+                    <div id="p-alert-container">
+                        <span class="highlight-red" style="font-size: 16px; padding: 10px 20px; box-shadow: 0 4px 10px rgba(239,68,68,0.2);">CRITICAL: Suspected Angina</span>
                     </div>
                 </div>
 
-                <!-- New Vitals Section -->
+                <!-- Vitals -->
                 <div class="vitals-banner">
                     <div class="vital-box">
                         <div class="v-label">Blood Pressure</div>
-                        <div class="v-value highlight-red">155/95 <span class="v-unit">mmHg</span></div>
+                        <div class="v-value highlight-red" id="v-bp">155/95 <span class="v-unit">mmHg</span></div>
                     </div>
                     <div class="vital-box">
                         <div class="v-label">Heart Rate</div>
-                        <div class="v-value">110 <span class="v-unit">bpm</span></div>
+                        <div class="v-value" id="v-hr">110 <span class="v-unit">bpm</span></div>
                     </div>
                     <div class="vital-box">
                         <div class="v-label">SpO2</div>
-                        <div class="v-value">96<span class="v-unit">%</span></div>
+                        <div class="v-value" id="v-spo2">96<span class="v-unit">%</span></div>
                     </div>
                     <div class="vital-box">
                         <div class="v-label">Temperature</div>
-                        <div class="v-value">98.6 <span class="v-unit">°F</span></div>
+                        <div class="v-value" id="v-temp">98.6 <span class="v-unit">°F</span></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Dashboard Grid -->
             <div class="grid-container">
                 
-                <!-- AI Structured History (Allopathic) -->
+                <!-- Allopathic -->
                 <div class="card">
                     <div class="card-header allopathic">AI Structured Clinical History</div>
                     <div class="card-body">
                         <div class="data-row">
                             <div class="data-label">Chief Complaint</div>
-                            <div class="data-value">Severe chest pain radiating to left arm.</div>
+                            <div class="data-value" id="c-chief">Severe chest pain radiating to left arm.</div>
                         </div>
                         <div class="data-row">
                             <div class="data-label">History of Present Illness (HPI)</div>
-                            <div class="data-value">Patient reports sudden onset of crushing chest pain <span class="highlight-red">starting 2 hours ago</span>. Pain is aggravated by deep breathing. Accompanied by mild shortness of breath.</div>
+                            <div class="data-value" id="c-hpi">Patient reports sudden onset of crushing chest pain starting 2 hours ago. Pain is aggravated by deep breathing.</div>
                         </div>
                         <div class="data-row">
                             <div class="data-label">Past Medical History</div>
-                            <div class="data-value">Hypertension (Diagnosed 2021). No known drug allergies.</div>
+                            <div class="data-value" id="c-pmh">Hypertension (Diagnosed 2021). No known drug allergies.</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Digitized Records (OCR) -->
+                <!-- Digitized Records (OCR) with Verify Buttons -->
                 <div class="card">
-                    <div class="card-header ocr">Extracted Past Records (OCR Timeline)</div>
-                    <div class="card-body">
-                        <div class="timeline-item">
-                            <div class="timeline-date">August 22, 2026 (Scanned Lab Report)</div>
-                            <div class="timeline-content">Complete Blood Count: WBC 6,500. <br>Cholesterol Profile: <span class="highlight-red">LDL 160 mg/dL (High)</span></div>
+                    <div class="card-header ocr">Extracted Past Records (OCR)</div>
+                    <div class="card-body" id="c-ocr">
+                        <div class="data-row">
+                            <div class="data-label">August 22, 2026 - Lab Report</div>
+                            <div class="data-value">
+                                Cholesterol Profile: <span class="highlight-red">LDL 160 mg/dL (High)</span><br>
+                                <!-- Button links to report.html -->
+                                <button class="btn-verify" onclick="window.location.href='report.html'">
+                                    🔍 View Original Scan
+                                </button>
+                            </div>
                         </div>
-                        <div class="timeline-item">
-                            <div class="timeline-date">March 10, 2025 (Scanned Prescription)</div>
-                            <div class="timeline-content">Prescribed: Amlodipine 5mg (Once Daily) for Hypertension.</div>
+                        <div class="data-row">
+                            <div class="data-label">March 10, 2025 - Prescription</div>
+                            <div class="data-value">
+                                Prescribed: Amlodipine 5mg (Once Daily)<br>
+                                <button class="btn-verify" onclick="window.location.href='report.html'">
+                                    🔍 View Original Scan
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Expanded AYUSH Profile -->
+                <!-- AYUSH Profile -->
                 <div class="card" style="grid-column: span 2;">
-                    <div class="card-header ayush">AYUSH Assessment Profile (Dashavidha Pariksha)</div>
+                    <div class="card-header ayush">AYUSH Assessment Profile</div>
                     <div class="card-body" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
                         <div class="data-row">
                             <div class="data-label">Prakriti (Constitution)</div>
-                            <div class="data-value"><b>Pitta-Vata</b> dominant. Prone to heat and acidity.</div>
+                            <div class="data-value" id="a-prakriti"><b>Pitta-Vata</b> dominant. Prone to heat and acidity.</div>
                         </div>
                         <div class="data-row">
                             <div class="data-label">Agni (Digestive Fire)</div>
-                            <div class="data-value"><b>Visham Agni</b> (Irregular digestion, reports frequent bloating).</div>
+                            <div class="data-value" id="a-agni"><b>Visham Agni</b> (Irregular digestion).</div>
                         </div>
                         <div class="data-row">
-                            <div class="data-label">Ahara-Vihara (Diet & Lifestyle)</div>
-                            <div class="data-value">High consumption of spicy/oily food. Sedentary lifestyle.</div>
+                            <div class="data-label">Ahara-Vihara (Lifestyle)</div>
+                            <div class="data-value" id="a-lifestyle">High consumption of spicy food. Sedentary lifestyle.</div>
                         </div>
                     </div>
                 </div>
 
             </div>
 
-            <!-- Action Bar -->
+            <!-- Enhanced Action Bar for Doctors -->
             <div class="action-bar">
                 <button class="btn btn-outline">Edit AI Summary</button>
-                <button class="btn btn-primary" onclick="window.location.href='login2.html'">Conclude & Logout</button>
+                <button class="btn btn-secondary">🔬 Order Labs</button>
+                <button class="btn btn-secondary">💊 Write Prescription</button>
+                <button class="btn btn-primary" onclick="window.location.href='login.html'">Conclude & Call Next Patient</button>
             </div>
 
         </section>
     </main>
 
     <script>
-        // Clock Functionality
+        // 1. Clock Functionality
         function updateClock() {
             const now = new Date();
             document.getElementById('datetime').innerText = now.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
         setInterval(updateClock, 1000); updateClock();
 
-        // Queue Selection Functionality
-        function selectPatient(element) {
-            // Remove 'active' class from all queue items
+        // 2. Dummy Database for Patients
+        const patientData = {
+            parmeshwar: {
+                name: "PARMESHWAR", demo: "19 Yrs • Male", abha: "ABHA ID: 91-XXXX-XXXX-3421",
+                isCritical: true, alertText: "CRITICAL: Suspected Angina",
+                bp: '155/95 <span class="v-unit">mmHg</span>', hr: '110 <span class="v-unit">bpm</span>', spo2: '96<span class="v-unit">%</span>', temp: '98.6 <span class="v-unit">°F</span>',
+                chief: "Severe chest pain radiating to left arm.",
+                hpi: "Patient reports sudden onset of crushing chest pain starting 2 hours ago. Aggravated by deep breathing.",
+                pmh: "Hypertension (Diagnosed 2021).",
+                ocr: `
+                    <div class="data-row">
+                        <div class="data-label">August 22, 2026 - Lab Report</div>
+                        <div class="data-value">Cholesterol Profile: <span class="highlight-red">LDL 160 mg/dL (High)</span><br><button class="btn-verify" onclick="window.location.href='report.html'">🔍 View Original Scan</button></div>
+                    </div>`,
+                prakriti: "<b>Pitta-Vata</b> dominant. Prone to heat and acidity.",
+                agni: "<b>Visham Agni</b> (Irregular digestion).",
+                lifestyle: "High consumption of spicy food. Sedentary lifestyle."
+            },
+            vishesh: {
+                name: "VISHESH", demo: "21 Yrs • Male", abha: "ABHA ID: 91-XXXX-XXXX-8822",
+                isCritical: false, alertText: "",
+                bp: '120/80 <span class="v-unit">mmHg</span>', hr: '78 <span class="v-unit">bpm</span>', spo2: '98<span class="v-unit">%</span>', temp: '101.2 <span class="v-unit">°F</span>',
+                chief: "High fever and persistent dry cough for 3 days.",
+                hpi: "Patient reports sudden onset of fever peaking at 102°F, accompanied by body ache and dry cough. No shortness of breath.",
+                pmh: "No significant past medical history. Mild seasonal allergies.",
+                ocr: `
+                    <div class="data-row">
+                        <div class="data-label">No Past Scanned Records Available</div>
+                        <div class="data-value" style="color: #64748b;">Patient did not upload historical documents during kiosk intake.</div>
+                    </div>`,
+                prakriti: "<b>Kapha</b> dominant.",
+                agni: "<b>Manda Agni</b> (Reduced appetite due to fever).",
+                lifestyle: "Adequate hydration, currently resting."
+            },
+            khushi: {
+                name: "KHUSHI", demo: "20 Yrs • Female", abha: "ABHA ID: 91-XXXX-XXXX-1155",
+                isCritical: false, alertText: "",
+                bp: '110/70 <span class="v-unit">mmHg</span>', hr: '82 <span class="v-unit">bpm</span>', spo2: '99<span class="v-unit">%</span>', temp: '98.4 <span class="v-unit">°F</span>',
+                chief: "Frequent headaches and generalized fatigue.",
+                hpi: "Experiencing throbbing headaches primarily in the evenings for the past 2 weeks. Associated with screen time and study stress.",
+                pmh: "Myopia (wears glasses). Mild anemia noted in 2024.",
+                ocr: `
+                    <div class="data-row">
+                        <div class="data-label">Dec 05, 2024 - Blood Panel</div>
+                        <div class="data-value">Hemoglobin: 10.5 g/dL (Slightly low)<br><button class="btn-verify" onclick="window.location.href='report.html'">🔍 View Original Scan</button></div>
+                    </div>`,
+                prakriti: "<b>Vata</b> dominant.",
+                agni: "<b>Sama Agni</b> (Normal digestion).",
+                lifestyle: "High academic stress. Irregular sleep schedule."
+            }
+        };
+
+        // 3. Update UI on Patient Click
+        function selectPatient(element, patientId) {
+            // Update Sidebar Highlights
             const items = document.querySelectorAll('.queue-item');
             items.forEach(item => item.classList.remove('active'));
-            
-            // Add 'active' class to the clicked item
             element.classList.add('active');
+
+            // Fetch Data
+            const data = patientData[patientId];
+
+            // Animate transition
+            const dashboard = document.getElementById('dashboard-content');
+            dashboard.style.opacity = 0;
+            
+            setTimeout(() => {
+                // Update Header
+                document.getElementById('p-name').innerText = data.name;
+                document.getElementById('p-demo').innerText = data.demo;
+                document.getElementById('p-abha').innerText = data.abha;
+
+                // Handle Critical Alert UI
+                const alertContainer = document.getElementById('p-alert-container');
+                const headerCard = document.getElementById('ph-card');
+                if (data.isCritical) {
+                    alertContainer.innerHTML = `<span class="highlight-red" style="font-size: 16px; padding: 10px 20px; box-shadow: 0 4px 10px rgba(239,68,68,0.2);">${data.alertText}</span>`;
+                    headerCard.style.borderTopColor = "#ef4444";
+                    document.getElementById('v-bp').classList.add('highlight-red');
+                } else {
+                    alertContainer.innerHTML = "";
+                    headerCard.style.borderTopColor = "#38bdf8";
+                    document.getElementById('v-bp').classList.remove('highlight-red');
+                }
+
+                // Update Vitals
+                document.getElementById('v-bp').innerHTML = data.bp;
+                document.getElementById('v-hr').innerHTML = data.hr;
+                document.getElementById('v-spo2').innerHTML = data.spo2;
+                document.getElementById('v-temp').innerHTML = data.temp;
+
+                // Update Allopathic History
+                document.getElementById('c-chief').innerText = data.chief;
+                document.getElementById('c-hpi').innerText = data.hpi;
+                document.getElementById('c-pmh').innerText = data.pmh;
+
+                // Update OCR & AYUSH
+                document.getElementById('c-ocr').innerHTML = data.ocr;
+                document.getElementById('a-prakriti').innerHTML = data.prakriti;
+                document.getElementById('a-agni').innerHTML = data.agni;
+                document.getElementById('a-lifestyle').innerHTML = data.lifestyle;
+
+                // Fade back in
+                dashboard.style.opacity = 1;
+            }, 200);
         }
     </script>
 </body>
